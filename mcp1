@@ -1,0 +1,48 @@
+from fastmcp import MCPAgent, Plugin
+import subprocess
+import os
+
+# File operations plugin
+class FilePlugin(Plugin):
+    def read_file(self, path: str) -> str:
+        try:
+            with open(path, 'r') as f:
+                return f.read()
+        except Exception as e:
+            return f"Error: {e}"
+
+    def write_file(self, path: str, content: str) -> str:
+        try:
+            with open(path, 'w') as f:
+                f.write(content)
+            return f"Successfully wrote to {path}"
+        except Exception as e:
+            return f"Error: {e}"
+
+# Shell plugin
+class ShellPlugin(Plugin):
+    def run(self, cmd: str) -> str:
+        try:
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+            return result.stdout or result.stderr
+        except Exception as e:
+            return f"Command error: {e}"
+
+# Create MCP agent and add plugins
+agent = MCPAgent("LocalContextAgent")
+agent.add_plugin("file", FilePlugin())
+agent.add_plugin("shell", ShellPlugin())
+
+# Interactive prompt
+if __name__ == "__main__":
+    print("🧠 FastMCP Agent Initialized")
+    print("Use: file.read_file('path'), file.write_file('path', 'content'), shell.run('command')")
+    
+    while True:
+        try:
+            query = input("\n[MCP] >>> ")
+            if query.strip().lower() in ("exit", "quit"):
+                break
+            print("\n[RESPONSE]:\n", agent.execute(query))
+        except Exception as e:
+            print("[ERROR]", e)
