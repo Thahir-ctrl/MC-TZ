@@ -1,0 +1,59 @@
+# mcp_agent.py
+
+from mcp import MCP
+import os
+import subprocess
+
+# Define the plugin class for file operations
+class FilePlugin:
+    def read_file(self, filepath: str) -> str:
+        """Reads a file from the file system."""
+        try:
+            with open(filepath, 'r') as file:
+                return file.read()
+        except Exception as e:
+            return f"Error reading file: {e}"
+
+    def write_file(self, filepath: str, content: str) -> str:
+        """Writes content to a file."""
+        try:
+            with open(filepath, 'w') as file:
+                file.write(content)
+            return f"Successfully wrote to {filepath}"
+        except Exception as e:
+            return f"Error writing to file: {e}"
+
+# Define the plugin class for command execution
+class ShellPlugin:
+    def run_command(self, command: str) -> str:
+        """Executes a shell command."""
+        try:
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            return result.stdout if result.stdout else result.stderr
+        except Exception as e:
+            return f"Error running command: {e}"
+
+# Initialize MCP with plugins
+def create_agent():
+    mcp = MCP(name="SystemAgent")
+    mcp.add_plugin("file", FilePlugin())
+    mcp.add_plugin("shell", ShellPlugin())
+    return mcp
+
+# Main interface loop
+if __name__ == "__main__":
+    agent = create_agent()
+
+    print("🧠 MCP Initialized. Use commands like: file.read_file, file.write_file, shell.run_command")
+    while True:
+        user_input = input("\n[MCP] >>> ")
+
+        if user_input.strip().lower() in ["exit", "quit"]:
+            print("Exiting MCP.")
+            break
+
+        try:
+            response = agent(user_input)
+            print("\n[RESPONSE]:\n", response)
+        except Exception as e:
+            print("[ERROR]:", e)
