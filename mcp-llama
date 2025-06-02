@@ -1,0 +1,74 @@
+import os
+import subprocess
+from dotenv import load_dotenv
+from langchain.llms import OpenAI  # Use `llama-cpp` if using local models
+
+# Load environment variables
+load_dotenv()
+
+# Initialize LLM (switch to local model if desired)
+llm = OpenAI(temperature=0)
+
+def read_file(filepath):
+    """Read contents of a file."""
+    try:
+        with open(filepath, 'r') as file:
+            return file.read()
+    except Exception as e:
+        return f"Error reading file: {e}"
+
+def write_file(filepath, content):
+    """Write content to a file."""
+    try:
+        with open(filepath, 'w') as file:
+            file.write(content)
+        return f"Successfully wrote to {filepath}"
+    except Exception as e:
+        return f"Error writing to file: {e}"
+
+def run_command(command):
+    """Run a shell command and return the output."""
+    try:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        return result.stdout if result.stdout else result.stderr
+    except Exception as e:
+        return f"Error running command: {e}"
+
+def interact_with_llm(prompt):
+    """Send a prompt to the LLM."""
+    return llm(prompt)
+
+def main():
+    while True:
+        user_input = input("\n[YOU] What do you want to do? (read/write/cmd/ask/exit): ").strip().lower()
+
+        if user_input == "read":
+            path = input("Enter file path to read: ")
+            content = read_file(path)
+            print("\n[FILE CONTENT]\n", content)
+
+        elif user_input == "write":
+            path = input("Enter file path to write: ")
+            content = input("Enter content to write: ")
+            result = write_file(path, content)
+            print(result)
+
+        elif user_input == "cmd":
+            cmd = input("Enter command to run: ")
+            output = run_command(cmd)
+            print("\n[COMMAND OUTPUT]\n", output)
+
+        elif user_input == "ask":
+            context = input("Enter your question or prompt for the LLM: ")
+            answer = interact_with_llm(context)
+            print("\n[LLM RESPONSE]\n", answer)
+
+        elif user_input == "exit":
+            print("Goodbye!")
+            break
+
+        else:
+            print("Unknown command. Please choose from: read, write, cmd, ask, exit.")
+
+if __name__ == "__main__":
+    main()
