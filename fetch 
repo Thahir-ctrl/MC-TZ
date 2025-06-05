@@ -1,0 +1,38 @@
+import re
+
+def extract_definitions(symbols, source_file, output_file):
+    with open(source_file, 'r') as f:
+        content = f.read()
+
+    extracted = []
+
+    for symbol in symbols:
+        # Match macro definitions
+        macro_pattern = re.compile(rf'#define\s+{re.escape(symbol)}[^\n]*\n', re.MULTILINE)
+        macros = macro_pattern.findall(content)
+        extracted.extend(macros)
+
+        # Match function definitions (simplified pattern, may not catch all complex cases)
+        func_pattern = re.compile(
+            rf'([a-zA-Z_][\w\s\*]*?)\b{re.escape(symbol)}\s*([^;]*?)\s*\{{.*?\n\}}',
+            re.DOTALL
+        )
+        functions = func_pattern.findall(content)
+        for ret_type, args in functions:
+            # Extract whole function
+            func_regex = re.compile(
+                rf'{re.escape(ret_type.strip())}\s+{re.escape(symbol)}\s*{args}\s*\{{.*?\n\}}',
+                re.DOTALL
+            )
+            match = func_regex.search(content)
+            if match:
+                extracted.append(match.group())
+
+    # Write to output file
+    with open(output_file, 'w') as f:
+        for item in extracted:
+            f.write(item + "\n")
+
+# Example usage
+symbols = ["MY_MACRO", "init_device", "shutdown_device"]
+extract_definitions(symbols, 'source.c', 'extracted.txt')
