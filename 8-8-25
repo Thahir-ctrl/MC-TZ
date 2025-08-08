@@ -1,0 +1,96 @@
+# config.py
+
+# ----- Base Config -----
+repo_path = "system/local/linux"
+
+# Mapping from choice to gen number
+gen_choices = {
+    1: 10,
+    2: 14,
+    3: 12
+}
+
+# This will be updated by main.py based on user input
+gen_number = None  # Placeholder until user selects
+
+# These will be updated dynamically
+machine_id = None
+board_number = None
+rdp_number = None
+
+def get_version_path():
+    if gen_number is None:
+        raise ValueError("gen_number is not set yet.")
+    return f"/device/driver/{gen_number}/config.xml"
+2️⃣ xml_editor.py
+python
+Copy
+Edit
+# xml_editor.py
+import xml.etree.ElementTree as ET
+
+def update_xml(xml_path, updates):
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+
+    for key, value in updates.items():
+        elem = root.find(key)
+        if elem is not None:
+            elem.text = str(value)
+        else:
+            print(f"⚠️ Warning: Tag '{key}' not found in XML.")
+
+    tree.write(xml_path)
+    print(f"✅ XML updated at {xml_path}")
+3️⃣ git_handler.py
+python
+Copy
+Edit
+# git_handler.py
+import subprocess
+
+def run_git_commands(repo_path, commit_message):
+    commands = [
+        ["git", "-C", repo_path, "add", "."],
+        ["git", "-C", repo_path, "commit", "-m", commit_message],
+        ["git", "-C", repo_path, "push"]
+    ]
+
+    for cmd in commands:
+        subprocess.run(cmd, check=True)
+    print("✅ Git operations completed successfully.")
+4️⃣ main.py
+python
+Copy
+Edit
+# main.py
+import config
+from xml_editor import update_xml
+from git_handler import run_git_commands
+
+# Step 1: Choose gen_number
+print("Choose a gen_number:")
+for k, v in config.gen_choices.items():
+    print(f"{k}. {v}th gen")
+
+choice = int(input("Enter choice: "))
+config.gen_number = config.gen_choices.get(choice)
+if not config.gen_number:
+    raise ValueError("Invalid choice for gen_number.")
+
+# Step 2: Get IDs from user
+config.machine_id = input("Enter machine ID: ")
+config.board_number = input("Enter board number: ")
+config.rdp_number = input("Enter RDP number: ")
+
+# Step 3: Update XML
+xml_path = config.get_version_path()
+updates = {
+    "machine_id": config.machine_id,
+    "board_number": config.board_number,
+    "rdp_number": config.rdp_number
+}
+update_xml(xml_path, updates)
+
+# Step 4: Git commit & push
+run_git_commands(config.repo_path, f"Updated config for {config.gen_number}th gen")
